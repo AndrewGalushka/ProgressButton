@@ -110,10 +110,6 @@ class AdvertSkipButton: UIView {
         updateStrokeCircleFrame()
         _ = countDownNumberLabel
     }
-
-//    override var intrinsicContentSize: CGSize {
-//        return CGSize(width: 45, height: 45)
-//    }
     
     private func setup() {
         self.backgroundColor = .clear
