@@ -7,8 +7,6 @@
 
 import UIKit
 
-// Note: @IBDesignable needed in order to `intrinsicContentSize` work in storyboard
-@IBDesignable
 class AdvertSkipButton: UIView {
     
     // MARK: - Public API
@@ -113,9 +111,9 @@ class AdvertSkipButton: UIView {
         _ = countDownNumberLabel
     }
 
-    override var intrinsicContentSize: CGSize {
-        return CGSize(width: 45, height: 45)
-    }
+//    override var intrinsicContentSize: CGSize {
+//        return CGSize(width: 45, height: 45)
+//    }
     
     private func setup() {
         self.backgroundColor = .clear
@@ -142,8 +140,8 @@ class AdvertSkipButton: UIView {
         layer.strokeColor = C.progressColor
         layer.position = CGPoint(x: self.frame.midX, y: self.frame.midY)
         layer.strokeEnd = 0.0
-        layer.lineJoin = .round
-        layer.lineWidth = 4
+        layer.lineCap = .round
+        layer.lineWidth = C.progressWidth
         self.layer.addSublayer(layer)
         return layer
     }()
@@ -151,14 +149,14 @@ class AdvertSkipButton: UIView {
     private lazy var countDownNumberLabel: UILabel = {
         let label = UILabel()
         label.textAlignment = .center
-        label.font = UIFont.systemFont(ofSize: 32)
+        label.font = UIFont.systemFont(ofSize: 13)
         label.minimumScaleFactor = 0.1
         
         label.translatesAutoresizingMaskIntoConstraints = false
         addSubview(label)
         
         NSLayoutConstraint.activate([
-            label.widthAnchor.constraint(equalTo: self.widthAnchor, multiplier: 0.22, constant: 0),
+            label.widthAnchor.constraint(equalTo: self.widthAnchor, multiplier: 0.5, constant: 0),
             label.heightAnchor.constraint(equalTo: label.widthAnchor, multiplier: 1.0, constant: 0),
             label.centerXAnchor.constraint(equalTo: self.centerXAnchor),
             label.centerYAnchor.constraint(equalTo: self.centerYAnchor)
@@ -201,7 +199,8 @@ class AdvertSkipButton: UIView {
     }()
     
     private func updateStrokeCircleFrame() {
-        let layerFrame = filledCircle.bounds.inset(by: UIEdgeInsets(top: 8, left: 8, bottom: 8, right: 8))
+        let inset = C.progressInsets
+        let layerFrame = filledCircle.bounds.insetBy(dx: inset, dy: inset)
         
         strokeCircle.frame = layerFrame
         let strokeFrame = CGRect(origin: .zero, size: layerFrame.size)
@@ -224,6 +223,8 @@ class AdvertSkipButton: UIView {
         static let xMarkImageName = I.commonXMarkVector.name
         static let circleFillColor = UIColor.black.withAlphaComponent(0.7).cgColor
         static let progressColor = UIColor.white.cgColor
+        static let progressWidth: CGFloat = 3
+        static let progressInsets: CGFloat = 4
     }
 }
 
