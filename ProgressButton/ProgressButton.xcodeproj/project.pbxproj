@@ -13,6 +13,8 @@
 		D11D5D082593A7A2004A6B87 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = D11D5D062593A7A2004A6B87 /* Main.storyboard */; };
 		D11D5D0A2593A7A4004A6B87 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D11D5D092593A7A4004A6B87 /* Assets.xcassets */; };
 		D11D5D0D2593A7A4004A6B87 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = D11D5D0B2593A7A4004A6B87 /* LaunchScreen.storyboard */; };
+		D11D5D1D2593A92E004A6B87 /* ProgressButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = D11D5D1C2593A92E004A6B87 /* ProgressButton.swift */; };
+		D11D5D212593A94B004A6B87 /* ProgressButtonController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D11D5D202593A94B004A6B87 /* ProgressButtonController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,6 +26,8 @@
 		D11D5D092593A7A4004A6B87 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		D11D5D0C2593A7A4004A6B87 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		D11D5D0E2593A7A4004A6B87 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		D11D5D1C2593A92E004A6B87 /* ProgressButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressButton.swift; sourceTree = "<group>"; };
+		D11D5D202593A94B004A6B87 /* ProgressButtonController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressButtonController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -58,6 +62,7 @@
 			children = (
 				D11D5D152593A7AC004A6B87 /* main */,
 				D11D5D172593A7B4004A6B87 /* Screens */,
+				D11D5D1B2593A915004A6B87 /* ProgressButton */,
 				D11D5D182593A7C1004A6B87 /* Resources */,
 			);
 			path = ProgressButton;
@@ -89,6 +94,15 @@
 				D11D5D0E2593A7A4004A6B87 /* Info.plist */,
 			);
 			path = Resources;
+			sourceTree = "<group>";
+		};
+		D11D5D1B2593A915004A6B87 /* ProgressButton */ = {
+			isa = PBXGroup;
+			children = (
+				D11D5D1C2593A92E004A6B87 /* ProgressButton.swift */,
+				D11D5D202593A94B004A6B87 /* ProgressButtonController.swift */,
+			);
+			path = ProgressButton;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -161,9 +175,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D11D5D1D2593A92E004A6B87 /* ProgressButton.swift in Sources */,
 				D11D5D052593A7A2004A6B87 /* ViewController.swift in Sources */,
 				D11D5D012593A7A2004A6B87 /* AppDelegate.swift in Sources */,
 				D11D5D032593A7A2004A6B87 /* SceneDelegate.swift in Sources */,
+				D11D5D212593A94B004A6B87 /* ProgressButtonController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
