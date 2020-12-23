@@ -216,7 +216,7 @@ class AdvertSkipButton: UIView {
     
     private enum C {
         static let strokeAnimationKey = "strokeEnd"
-        static let xMarkImageName = I.commonXMarkVector.name
+        static let xMarkImageName = "x_mark_vector"
         static let circleFillColor = UIColor.black.withAlphaComponent(0.7).cgColor
         static let progressColor = UIColor.white.cgColor
         static let progressWidth: CGFloat = 3
