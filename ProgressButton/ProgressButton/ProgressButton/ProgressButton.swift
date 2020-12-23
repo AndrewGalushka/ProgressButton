@@ -7,9 +7,9 @@
 
 import UIKit
 
-// MARK: ----
-
-class ProgressButton: UIView {
+// Note: @IBDesignable needed in order to `intrinsicContentSize` work in storyboard
+@IBDesignable
+class AdvertSkipButton: UIView {
     
     // MARK: - Public API
     
@@ -46,8 +46,24 @@ class ProgressButton: UIView {
     func removeTarget(_ target: Any?, action: Selector?, for controlEvents: UIControl.Event) {
         control.removeTarget(target, action: action, for: controlEvents)
     }
+    
     var allTargets: Set<AnyHashable> {
         control.allTargets
+    }
+    
+    func pauseAnimations() {
+        let pausedTime = layer.convertTime(CACurrentMediaTime(), from: nil)
+        layer.speed = 0.0
+        layer.timeOffset = pausedTime
+    }
+    
+    func resumeAnimations() {
+        let pausedTime = layer.timeOffset
+        layer.speed = 1.0
+        layer.timeOffset = 0.0
+        layer.beginTime = 0.0
+        let timeSincePause = layer.convertTime(CACurrentMediaTime(), from: nil) - pausedTime
+        layer.beginTime = timeSincePause
     }
     
     // MARK: - Private API
@@ -89,6 +105,18 @@ class ProgressButton: UIView {
         setup()
     }
     
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        
+        updateFilledCircleFrame()
+        updateStrokeCircleFrame()
+        _ = countDownNumberLabel
+    }
+
+    override var intrinsicContentSize: CGSize {
+        return CGSize(width: 45, height: 45)
+    }
+    
     private func setup() {
         self.backgroundColor = .clear
         
@@ -102,7 +130,7 @@ class ProgressButton: UIView {
     
     private lazy var filledCircle: CAShapeLayer = {
         let layer = CAShapeLayer()
-        layer.fillColor = .init(gray: 1, alpha: 0.7)
+        layer.fillColor = C.circleFillColor
         layer.position = CGPoint(x: self.frame.midX, y: self.frame.midY)
         self.layer.addSublayer(layer)
         return layer
@@ -111,7 +139,7 @@ class ProgressButton: UIView {
     private lazy var strokeCircle: CAShapeLayer = {
         let layer = CAShapeLayer()
         layer.fillColor = UIColor.clear.cgColor
-        layer.strokeColor = UIColor.white.cgColor//CGColor(gray: 0.0, alpha: 1.0)
+        layer.strokeColor = C.progressColor
         layer.position = CGPoint(x: self.frame.midX, y: self.frame.midY)
         layer.strokeEnd = 0.0
         layer.lineJoin = .round
@@ -172,14 +200,6 @@ class ProgressButton: UIView {
         return imageView
     }()
     
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        
-        updateFilledCircleFrame()
-        updateStrokeCircleFrame()
-        _ = countDownNumberLabel
-    }
-    
     private func updateStrokeCircleFrame() {
         let layerFrame = filledCircle.bounds.inset(by: UIEdgeInsets(top: 8, left: 8, bottom: 8, right: 8))
         
@@ -201,9 +221,9 @@ class ProgressButton: UIView {
     
     private enum C {
         static let strokeAnimationKey = "strokeEnd"
-        static let xMarkImageName = "x_mark_vector"
+        static let xMarkImageName = I.commonXMarkVector.name
+        static let circleFillColor = UIColor.black.withAlphaComponent(0.7).cgColor
+        static let progressColor = UIColor.white.cgColor
     }
 }
-
-// MARK: ----
 
