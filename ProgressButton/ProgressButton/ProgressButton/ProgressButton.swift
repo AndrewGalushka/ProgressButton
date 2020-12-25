@@ -13,40 +13,64 @@ class AdvertSkipButton: UIView {
     
     enum Props {
         case idle
-        case start(forDuration: Int)
-        case update(time: Int)
-        case transitToSkippable
+        case start(for: Int,
+                   timeBeforeSkip: Int,
+                   onSkip: () -> Void,
+                   onFinish:() -> Void)
     }
     
-    func render(_ props: Props) {
+    func render(props: Props) {
         switch props {
         case .idle:
-            setCountdownLabelHidden(true)
-            setXMarkEnabled(false)
-            resetStroke()
-        case .start(forDuration: let duration):
-            setCountdownLabelHidden(false)
-            countDownNumberLabel.text = "\(duration)"
-            animateStroke(duration: duration)
-        case .update(time: let time):
-            setCountdownLabelHidden(false)
-            countDownNumberLabel.text = "\(time)"
-        case .transitToSkippable:
-            setCountdownLabelHidden(true)
-            setXMarkEnabled(true)
+            reset()
+        case .start(let time, let timeBeforeSkip, let onSkip, let onFinish):
+            self.start(for: time,
+                       timeBeforeSkip: timeBeforeSkip,
+                       onSkip: onSkip,
+                       onFinish: onFinish)
         }
     }
     
-    func addTarget(_ target: Any?, action: Selector, for controlEvents: UIControl.Event) {
-        control.addTarget(target, action: action, for: controlEvents)
+    // MARK: - Private
+    
+    private var timer: AdvertisementTimer?
+    private var onSkip: (() -> Void)?
+        
+    private func start(for duration: Int,
+                       timeBeforeSkip: Int,
+                       onSkip: @escaping () -> Void,
+                       onFinish: @escaping () -> Void) {
+        self.onSkip = onSkip
+        setCountdownLabelHidden(false)
+        countDownNumberLabel.text = "\(duration)"
+        animateStroke(duration: duration)
+        
+        self.timer = AdvertisementTimer(advertDuration: duration, timeBeforeSkip: timeBeforeSkip)
+        
+        self.timer?.startTimer(onTick: { [weak self] (tickType) in
+            guard let self = self else { return }
+            
+            switch tickType {
+            case .beforeSkip(timeLeft: let timeLeft):
+                self.countDownNumberLabel.text = "\(timeLeft)"
+            case .reachedSkip:
+                self.setCountdownLabelHidden(true)
+                self.setXMarkEnabled(true)
+            case .afterSkip:
+                break
+            }
+        },
+        onFullDurationFinish: {
+            onFinish()
+        })
     }
     
-    func removeTarget(_ target: Any?, action: Selector?, for controlEvents: UIControl.Event) {
-        control.removeTarget(target, action: action, for: controlEvents)
-    }
-    
-    var allTargets: Set<AnyHashable> {
-        control.allTargets
+    private func reset() {
+        onSkip = nil
+        timer = nil
+        setCountdownLabelHidden(true)
+        setXMarkEnabled(false)
+        resetStroke()
     }
     
     func pauseAnimations() {
@@ -68,17 +92,18 @@ class AdvertSkipButton: UIView {
     
     private func animateStroke(duration: Int) {
         let animation = CABasicAnimation(keyPath: #keyPath(CAShapeLayer.strokeEnd))
-        animation.fromValue = 0.0
-        animation.toValue = 1.0
+        animation.fromValue = 1.0
+        animation.toValue = 0.0
         animation.duration = CFTimeInterval(duration)
         animation.fillMode = .forwards
+        animation.timingFunction = CAMediaTimingFunction(name: .linear)
         animation.isRemovedOnCompletion = false
         
         strokeCircle.add(animation, forKey: C.strokeAnimationKey)
     }
     
     private func resetStroke() {
-        strokeCircle.strokeEnd = 0.0
+        strokeCircle.strokeEnd = 1.0
         strokeCircle.removeAnimation(forKey: C.strokeAnimationKey)
     }
     
@@ -88,7 +113,7 @@ class AdvertSkipButton: UIView {
     
     private func setXMarkEnabled(_ isEnabled: Bool, animated: Bool = false) {
         xMarkImageView.isHidden = !isEnabled
-        control.isUserInteractionEnabled = isEnabled
+        skipControl.isUserInteractionEnabled = isEnabled
     }
     
     // MARK: - Guts
@@ -118,7 +143,7 @@ class AdvertSkipButton: UIView {
         updateStrokeCircleFrame()
         
         countDownNumberLabel.isHidden = true
-        control.isUserInteractionEnabled = false
+        skipControl.isUserInteractionEnabled = false
         xMarkImageView.isHidden = true
     }
     
@@ -135,7 +160,7 @@ class AdvertSkipButton: UIView {
         layer.fillColor = UIColor.clear.cgColor
         layer.strokeColor = C.progressColor
         layer.position = CGPoint(x: self.frame.midX, y: self.frame.midY)
-        layer.strokeEnd = 0.0
+        layer.strokeEnd = 1.0
         layer.lineCap = .round
         layer.lineWidth = C.progressWidth
         self.layer.addSublayer(layer)
@@ -145,8 +170,8 @@ class AdvertSkipButton: UIView {
     private lazy var countDownNumberLabel: UILabel = {
         let label = UILabel()
         label.textAlignment = .center
+        label.textColor = .white
         label.font = UIFont.systemFont(ofSize: 13)
-        label.minimumScaleFactor = 0.1
         
         label.translatesAutoresizingMaskIntoConstraints = false
         addSubview(label)
@@ -161,10 +186,11 @@ class AdvertSkipButton: UIView {
         return label
     }()
     
-    private lazy var control: UIControl = {
+    private lazy var skipControl: UIControl = {
         let control = UIControl()
         
         control.translatesAutoresizingMaskIntoConstraints = false
+        control.addTarget(self, action: #selector(skipTapped), for: .touchUpInside)
         self.addSubview(control)
         
         NSLayoutConstraint.activate([
@@ -214,6 +240,11 @@ class AdvertSkipButton: UIView {
         filledCircle.path = UIBezierPath(ovalIn: CGRect(origin: .zero, size: filledFrame.size)).cgPath
     }
     
+    @objc
+    private func skipTapped() {
+        onSkip?()
+    }
+    
     private enum C {
         static let strokeAnimationKey = "strokeEnd"
         static let xMarkImageName = "x_mark_vector"
@@ -224,3 +255,62 @@ class AdvertSkipButton: UIView {
     }
 }
 
+private class AdvertisementTimer {
+    let advertDuration: Int
+    let skipThreshold: Int
+    
+    init(advertDuration: Int, timeBeforeSkip: Int) {
+        self.advertDuration = advertDuration
+        self.skipThreshold = advertDuration - timeBeforeSkip
+    }
+    
+    deinit {
+        invalidateTimer()
+    }
+    
+    private lazy var currentDuration: Int = advertDuration
+    private weak var timer: Timer?
+    
+    enum TickType {
+        case beforeSkip(timeLeft: Int)
+        case reachedSkip(atTime: Int)
+        case afterSkip(time: Int)
+    }
+    
+    func startTimer(onTick: @escaping (TickType) -> Void,
+                    onFullDurationFinish: @escaping  () -> Void) {
+        invalidateTimer()
+        
+        timer = Timer.scheduledTimer(withTimeInterval: 1,
+                                     repeats: true,
+                                     block: { [weak self] (timer) in
+                                        guard let self = self else { return }
+                                        self.currentDuration -= 1
+                                        
+                                        guard self.currentDuration > 0 else {
+                                            self.reset()
+                                            onFullDurationFinish()
+                                            return
+                                        }
+                                        
+                                        if self.currentDuration > self.skipThreshold {
+                                            onTick(.beforeSkip(timeLeft: self.currentDuration))
+                                        } else if self.currentDuration == self.skipThreshold  {
+                                            onTick(.reachedSkip(atTime: self.currentDuration))
+                                        } else {
+                                            onTick(.afterSkip(time: self.currentDuration))
+                                        }
+                                     })
+    }
+    
+    /// Return everting to the initial state and invalidate timer
+    private func reset() {
+        currentDuration = advertDuration
+        invalidateTimer()
+    }
+    
+    private func invalidateTimer() {
+        timer?.invalidate()
+        timer = nil
+    }
+}
