@@ -95,10 +95,9 @@ class AdvertSkipButton: UIView {
         animation.fromValue = 1.0
         animation.toValue = 0.0
         animation.duration = CFTimeInterval(duration)
-        animation.fillMode = .forwards
         animation.timingFunction = CAMediaTimingFunction(name: .linear)
-        animation.isRemovedOnCompletion = false
         
+        strokeCircle.strokeEnd = 0.0
         strokeCircle.add(animation, forKey: C.strokeAnimationKey)
     }
     
@@ -168,7 +167,7 @@ class AdvertSkipButton: UIView {
     }()
     
     private lazy var countDownNumberLabel: UILabel = {
-        let label = UILabel()
+        let label = NonIntrinsicSizeLabel()
         label.textAlignment = .center
         label.textColor = .white
         label.font = UIFont.systemFont(ofSize: 13)
@@ -244,7 +243,78 @@ class AdvertSkipButton: UIView {
     private func skipTapped() {
         onSkip?()
     }
+}
+
+private extension AdvertSkipButton {
+    private class NonIntrinsicSizeLabel: UILabel {
+        override func invalidateIntrinsicContentSize() {
+            return
+        }
+    }
     
+    private class AdvertisementTimer {
+        let advertDuration: Int
+        let skipThreshold: Int
+        
+        init(advertDuration: Int, timeBeforeSkip: Int) {
+            self.advertDuration = advertDuration
+            self.skipThreshold = advertDuration - timeBeforeSkip
+        }
+        
+        deinit {
+            invalidateTimer()
+        }
+        
+        private lazy var currentDuration: Int = advertDuration
+        private weak var timer: Timer?
+        
+        enum TickType {
+            case beforeSkip(timeLeft: Int)
+            case reachedSkip(atTime: Int)
+            case afterSkip(time: Int)
+        }
+        
+        func startTimer(onTick: @escaping (TickType) -> Void,
+                        onFullDurationFinish: @escaping  () -> Void) {
+            invalidateTimer()
+            
+            timer = Timer.scheduledTimer(withTimeInterval: 1,
+                                         repeats: true,
+                                         block: { [weak self] (timer) in
+                                            guard let self = self else { return }
+                                            self.currentDuration -= 1
+                                            
+                                            guard self.currentDuration > 0 else {
+                                                self.reset()
+                                                onFullDurationFinish()
+                                                return
+                                            }
+                                            
+                                            if self.currentDuration > self.skipThreshold {
+                                                onTick(.beforeSkip(timeLeft: self.currentDuration))
+                                            } else if self.currentDuration == self.skipThreshold  {
+                                                onTick(.reachedSkip(atTime: self.currentDuration))
+                                            } else {
+                                                onTick(.afterSkip(time: self.currentDuration))
+                                            }
+                                         })
+        }
+        
+        /// Return everting to the initial state and invalidate timer
+        private func reset() {
+            currentDuration = advertDuration
+            invalidateTimer()
+        }
+        
+        private func invalidateTimer() {
+            timer?.invalidate()
+            timer = nil
+        }
+    }
+
+}
+
+private extension AdvertSkipButton {
     private enum C {
         static let strokeAnimationKey = "strokeEnd"
         static let xMarkImageName = "x_mark_vector"
@@ -252,65 +322,5 @@ class AdvertSkipButton: UIView {
         static let progressColor = UIColor.white.cgColor
         static let progressWidth: CGFloat = 3
         static let progressInsets: CGFloat = 4
-    }
-}
-
-private class AdvertisementTimer {
-    let advertDuration: Int
-    let skipThreshold: Int
-    
-    init(advertDuration: Int, timeBeforeSkip: Int) {
-        self.advertDuration = advertDuration
-        self.skipThreshold = advertDuration - timeBeforeSkip
-    }
-    
-    deinit {
-        invalidateTimer()
-    }
-    
-    private lazy var currentDuration: Int = advertDuration
-    private weak var timer: Timer?
-    
-    enum TickType {
-        case beforeSkip(timeLeft: Int)
-        case reachedSkip(atTime: Int)
-        case afterSkip(time: Int)
-    }
-    
-    func startTimer(onTick: @escaping (TickType) -> Void,
-                    onFullDurationFinish: @escaping  () -> Void) {
-        invalidateTimer()
-        
-        timer = Timer.scheduledTimer(withTimeInterval: 1,
-                                     repeats: true,
-                                     block: { [weak self] (timer) in
-                                        guard let self = self else { return }
-                                        self.currentDuration -= 1
-                                        
-                                        guard self.currentDuration > 0 else {
-                                            self.reset()
-                                            onFullDurationFinish()
-                                            return
-                                        }
-                                        
-                                        if self.currentDuration > self.skipThreshold {
-                                            onTick(.beforeSkip(timeLeft: self.currentDuration))
-                                        } else if self.currentDuration == self.skipThreshold  {
-                                            onTick(.reachedSkip(atTime: self.currentDuration))
-                                        } else {
-                                            onTick(.afterSkip(time: self.currentDuration))
-                                        }
-                                     })
-    }
-    
-    /// Return everting to the initial state and invalidate timer
-    private func reset() {
-        currentDuration = advertDuration
-        invalidateTimer()
-    }
-    
-    private func invalidateTimer() {
-        timer?.invalidate()
-        timer = nil
     }
 }
